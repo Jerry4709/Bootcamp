@@ -12,7 +12,7 @@ import axiosInstance from '@/services/axios';
 
 interface AuthContextValue {
   user: User | null;
-  login: (sid: string, password: string) => Promise<void>;
+  login: (token: string) => void;
   logout: () => void;
   isAuthReady: boolean;
   setUser: (user: User) => void;
@@ -40,10 +40,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   /* ----------------------- actions ----------------------- */
-  const login = useCallback(async (sid: string, password: string) => {
-    const { accessToken, user } = await authService.login(sid, password);
-    setToken(accessToken);
-    setUser(user);
+  // อัพเดทจาก sid เป็น email ตามที่ backend คาดหวัง
+  const loginAction = useCallback(async (email: string, password: string) => {
+    try {
+      const { accessToken, user } = await authService.login(email, password);
+      setToken(accessToken);
+      setUser(user);
+      return { accessToken, user };
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const login = useCallback((token: string) => {
+    setToken(token);
   }, []);
 
   const logout = useCallback(() => {
@@ -110,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = useMemo<AuthContextValue>(
     () => ({ 
       user, 
-      login, 
+      login, // ยังคงเก็บ login แบบเดิมไว้ตอนนี้เพื่อไม่ให้กระทบกับส่วนอื่น
       logout, 
       isAuthReady,
       setUser: setUserProfile 
