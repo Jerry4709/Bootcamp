@@ -59,32 +59,38 @@ export default function DashboardLayout() {
               to={item.to}
               end
               className={({ isActive }) =>
-                `relative flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${
-                  isActive
-                    ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
-                    : 'text-neutral-700 dark:text-neutral-100 hover:bg-violet-200/20 dark:hover:bg-violet-900/20 hover:text-violet-600'
-                }`
+                `group relative flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300
+                ${isActive 
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
+                  : 'text-gray-600 hover:bg-violet-200/20 dark:hover:bg-violet-900/20 hover:text-violet-600'}`
               }
             >
               {({ isActive }) => (
                 <>
-                  <motion.span
-                    className="flex items-center gap-4"
-                    whileHover={{ scale: 1.05, x: 5 }}
-                    whileTap={{ scale: 0.95 }}
+                  <motion.div
+                    className="z-10 flex items-center gap-4"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 300 }}
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                  </motion.span>
-                  {/* hover overlay */}
-                  <span className="absolute inset-0 rounded-xl bg-violet-400/20 scale-0 group-hover:scale-100 transition-transform duration-300 origin-center" />
-                  {/* active indicator */}
+                  </motion.div>
+
+                  {!isActive && (
+                    <motion.div
+                      className="absolute inset-0 bg-indigo-500/5 rounded-xl"
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+
                   {isActive && (
                     <motion.div
                       className="absolute right-4 w-1.5 h-6 bg-white rounded-full"
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
-                      transition={{ duration: 0.4, ease: 'backOut' }}
+                      transition={{ duration: 0.4, ease: "backOut" }}
                     />
                   )}
                 </>
@@ -147,30 +153,38 @@ export default function DashboardLayout() {
                     end
                     onClick={() => setOpen(false)}
                     className={({ isActive }) =>
-                      `relative flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${
-                        isActive
-                          ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
-                          : 'text-neutral-700 dark:text-neutral-100 hover:bg-violet-200/20 dark:hover:bg-violet-900/20 hover:text-violet-600'
-                      }`
+                      `group relative flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300
+                      ${isActive 
+                        ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
+                        : 'text-gray-600 hover:bg-violet-200/20 dark:hover:bg-violet-900/20 hover:text-violet-600'}`
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <motion.span
-                          className="flex items-center gap-4"
-                          whileHover={{ scale: 1.05, x: 5 }}
-                          whileTap={{ scale: 0.95 }}
+                        <motion.div
+                          className="z-10 flex items-center gap-4"
+                          whileHover={{ x: 4 }}
+                          transition={{ type: "spring", stiffness: 300 }}
                         >
                           {item.icon}
                           <span>{item.label}</span>
-                        </motion.span>
-                        <span className="absolute inset-0 rounded-xl bg-violet-400/20 scale-0 group-hover:scale-100 transition-transform duration-300 origin-center" />
+                        </motion.div>
+
+                        {!isActive && (
+                          <motion.div
+                            className="absolute inset-0 bg-indigo-500/5 rounded-xl"
+                            initial={{ opacity: 0 }}
+                            whileHover={{ opacity: 1 }}
+                            transition={{ duration: 0.2 }}
+                          />
+                        )}
+
                         {isActive && (
                           <motion.div
                             className="absolute right-4 w-1.5 h-6 bg-white rounded-full"
                             initial={{ scaleY: 0 }}
                             animate={{ scaleY: 1 }}
-                            transition={{ duration: 0.4, ease: 'backOut' }}
+                            transition={{ duration: 0.4, ease: "backOut" }}
                           />
                         )}
                       </>
@@ -178,6 +192,18 @@ export default function DashboardLayout() {
                   </NavLink>
                 ))}
               </nav>
+              <div className="p-4 border-t border-violet-300/30 dark:border-violet-900/30">
+                <motion.button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-100/20 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                  whileHover={{ scale: 1.03, x: 5 }}
+                  whileTap={{ scale: 0.97 }}
+                  aria-label="ออกจากระบบ"
+                >
+                  <LogOut size={20} />
+                  ออกจากระบบ
+                </motion.button>
+              </div>
             </motion.aside>
           </motion.div>
         )}

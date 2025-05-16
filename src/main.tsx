@@ -127,16 +127,21 @@ const router = createBrowserRouter([
   // Protected - Admin
   {
     path: '/admin',
-   // element: <ProtectedRoute allow={['ADMIN']}><AdminDash /></ProtectedRoute>,
+    // element: <ProtectedRoute allow={['ADMIN']}><AdminDash /></ProtectedRoute>,
     element: <AdminLayout/>,
     children:[
       { index: true, element: <AdminDash /> },
-      {path: 'activities', element:<AdminActivityDetail/>},
-      {path: 'approval', element:<ApprovalCenter/>},
-      {path: 'users', element:<UserManagement/>},
-
+      { path: 'activities', element: <AdminActivityDetail/> },
+      { path: 'approval', element: <ApprovalCenter/> },
+      { path: 'users', element: <UserManagement/> },
+      
+      // เพิ่ม Staff functionality สำหรับ Admin
+      { path: 'staff-activities', element: <StaffActivityList /> },
+      { path: 'staff-activities/create', element: <CreateActivity /> },
+      { path: 'staff-activities/:id/edit', element: <EditActivity /> },
+      { path: 'staff-activities/:id', element: <ActivityDetailPage /> },
+      { path: 'staff-activities/:id/applicants', element: <Applicants /> },
     ]
-
   },
 
   // Misc

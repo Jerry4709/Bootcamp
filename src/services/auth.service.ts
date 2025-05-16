@@ -26,6 +26,8 @@ interface BackendLoginResponse {
 // ใช้ interface เดิมสำหรับ return value ที่ Frontend ใช้
 export type LoginResponse = { accessToken: string; user: User };
 
+
+
 // แก้ไขพารามิเตอร์จาก sid เป็น email
 export const login = async (
   email: string,
@@ -48,7 +50,7 @@ export const login = async (
   
   // สร้าง user ในรูปแบบที่ Frontend ต้องการ
 const user: User = {
-  id: String(backendUser.id), // แปลงจาก number เป็น string
+  id: String(backendUser.id), // แปลงจา ก number เป็น string
   sid: backendUser.student_id,
   firstname: nameParts[0],
   lastname: nameParts.slice(1).join(' '), // รวมทุกส่วนที่เหลือเป็นนามสกุล
