@@ -12,7 +12,8 @@ import axiosInstance from '@/services/axios';
 
 interface AuthContextValue {
   user: User | null;
-  login: (sid: string, password: string) => Promise<void>;
+  login: (token: string) => void;
+  loginAction: (email: string, password: string) => Promise<{accessToken: string, user: User}>; // เพิ่มบรรทัดนี้
   logout: () => void;
   isAuthReady: boolean;
   setUser: (user: User) => void;
@@ -40,10 +41,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   /* ----------------------- actions ----------------------- */
-  const login = useCallback(async (sid: string, password: string) => {
-    const { accessToken, user } = await authService.login(sid, password);
-    setToken(accessToken);
-    setUser(user);
+  // อัพเดทจาก sid เป็น email ตามที่ backend คาดหวัง
+  const loginAction = useCallback(async (email: string, password: string) => {
+    try {
+      const { accessToken, user } = await authService.login(email, password);
+      setToken(accessToken);
+      setUser(user);
+      return { accessToken, user };
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const login = useCallback((token: string) => {
+    setToken(token);
   }, []);
 
   const logout = useCallback(() => {
@@ -107,17 +118,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => axiosInstance.interceptors.response.eject(id);
   }, [logout]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ 
-      user, 
-      login, 
-      logout, 
-      isAuthReady,
-      setUser: setUserProfile 
-    }),
-    [user, login, logout, isAuthReady, setUserProfile]
-  );
-
+const value = useMemo<AuthContextValue>(
+  () => ({ 
+    user, 
+    login,
+    loginAction, // เพิ่มบรรทัดนี้
+    logout, 
+    isAuthReady,
+    setUser: setUserProfile 
+  }),
+  [user, login, loginAction, logout, isAuthReady, setUserProfile] // อย่าลืมเพิ่ม dependency ด้วย
+);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

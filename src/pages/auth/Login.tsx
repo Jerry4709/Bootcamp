@@ -2,25 +2,12 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth'; // Hook สำหรับจัดการ auth state (เช่น token)
+import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
-
-// Type definition for AuthContextValue
-interface AuthContextValue {
-  login: (token: string) => void; // ฟังก์ชันสำหรับบันทึก token
-  logout: () => void; // ฟังก์ชันสำหรับ logout (ถ้ามี)
-}
-
-// Interface สำหรับ response จาก backend
-interface LoginResponse {
-  success: boolean;
-  token?: string;
-  message?: string;
-}
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginWithCredentials } = useAuth(); // ใช้ loginWithCredentials แทน
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,26 +21,11 @@ export default function Login() {
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data: LoginResponse = await response.json();
-
-      if (data.success && data.token) {
-        
-        login(data.token);
-        localStorage.setItem('authToken', data.token); // ตัวอย่างการบันทึก token
-        navigate(ROUTES.STUDENT_DASHBOARD);
-      } else {
-        setError(data.message || 'Login failed. Please try again.');
-      }
-    } catch (err) {
-      setError('An error occurred. Please check your network or try again later.');
+      // ใช้ loginWithCredentials จาก useAuth
+      await loginWithCredentials(email, password);
+      navigate(ROUTES.STUDENT_DASHBOARD);
+    } catch (err: any) {
+      setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง');
     } finally {
       setLoading(false);
     }
@@ -209,7 +181,7 @@ export default function Login() {
           className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400"
           variants={itemVariants}
         >
-          Don’t have an account?{' '}
+          Don't have an account?{' '}
           <Link
             to={ROUTES.REGISTER}
             className="text-violet-600 hover:text-violet-700 font-semibold transition-colors duration-200"
