@@ -13,6 +13,7 @@ import axiosInstance from '@/services/axios';
 interface AuthContextValue {
   user: User | null;
   login: (token: string) => void;
+  loginAction: (email: string, password: string) => Promise<{accessToken: string, user: User}>; // เพิ่มบรรทัดนี้
   logout: () => void;
   isAuthReady: boolean;
   setUser: (user: User) => void;
@@ -117,17 +118,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => axiosInstance.interceptors.response.eject(id);
   }, [logout]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ 
-      user, 
-      login, // ยังคงเก็บ login แบบเดิมไว้ตอนนี้เพื่อไม่ให้กระทบกับส่วนอื่น
-      logout, 
-      isAuthReady,
-      setUser: setUserProfile 
-    }),
-    [user, login, logout, isAuthReady, setUserProfile]
-  );
-
+const value = useMemo<AuthContextValue>(
+  () => ({ 
+    user, 
+    login,
+    loginAction, // เพิ่มบรรทัดนี้
+    logout, 
+    isAuthReady,
+    setUser: setUserProfile 
+  }),
+  [user, login, loginAction, logout, isAuthReady, setUserProfile] // อย่าลืมเพิ่ม dependency ด้วย
+);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

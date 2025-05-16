@@ -47,19 +47,19 @@ export const login = async (
   const nameParts = backendUser.full_name.split(' ');
   
   // สร้าง user ในรูปแบบที่ Frontend ต้องการ
-  const user: User = {
-    id: String(backendUser.id), // แปลงจาก number เป็น string
-    sid: backendUser.student_id,
-    firstname: nameParts[0],
-    lastname: nameParts.slice(1).join(' '), // รวมทุกส่วนที่เหลือเป็นนามสกุล
-    email: backendUser.email,
-    role: backendUser.role as User['role'], // Type casting เพื่อให้ TypeScript ยอมรับ
-    avatarUrl: backendUser.profile_image,
-    hours: backendUser.total_hours || 0,
-    points: backendUser.total_points || 0,
-    createdAt: backendUser.created_at,
-    updatedAt: backendUser.created_at, // Backend ไม่มี updated_at จึงใช้ created_at แทน
-  };
+const user: User = {
+  id: String(backendUser.id), // แปลงจาก number เป็น string
+  sid: backendUser.student_id,
+  firstname: nameParts[0],
+  lastname: nameParts.slice(1).join(' '), // รวมทุกส่วนที่เหลือเป็นนามสกุล
+  email: backendUser.email,
+  role: backendUser.role as User['role'], // Type casting เพื่อให้ TypeScript ยอมรับ
+  avatarUrl: backendUser.profile_image,
+  hours: backendUser.total_hours || 0,
+  points: backendUser.total_points || 0,
+  createdAt: backendUser.created_at,
+  updatedAt: backendUser.created_at, // Backend ไม่มี updated_at จึงใช้ created_at แทน
+};
 
   return {
     accessToken: data.data.token,
