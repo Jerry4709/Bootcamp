@@ -10,12 +10,15 @@ import DashboardLayout from './layouts/DashboardLayout'
 import MyActivities from './pages/student/MyActivities'
 import Profile from './pages/student/Profile'
 import StaffLayout from './layouts/StaffLayout'
-import StaffDashboard from '@/pages/staff/Dashboard'
 import StaffActivityList from './pages/staff/Activities/ActivityList'
 import CreateActivity from '@/pages/staff/CreateActivity'
 import EditActivity from './pages/staff/EditActivity'
 import ActivityDetailPage from '@/pages/student/Activities/ActivityDetail'
 import Applicants from './pages/staff/Applicants'
+import AdminLayout from './layouts/AdminLayout'
+import AdminActivityDetail from './pages/admin/Activities/ActivityDetail'
+import ApprovalCenter from './pages/admin/ApprovalCenter'
+import UserManagement from './pages/admin/UserManagement'
 
 // ─── Lazy-loaded Pages ───────────────────────────────
 const Login         = lazy(() => import('@/pages/auth/Login'))
@@ -23,7 +26,7 @@ const Register      = lazy(() => import('@/pages/auth/Register'))
 const StudentDash   = lazy(() => import('@/pages/student/Dashboard'))
 const StudentActs   = lazy(() => import('@/pages/student/Activities/ActivityList'))
 const StudentDetail = lazy(() => import('@/pages/student/Activities/ActivityDetail'))
-const StaffDash     = lazy(() => import('@/pages/staff/Dashboard'))
+const StaffDashboard     = lazy(() => import('@/pages/staff/Dashboard'))
 const CreateAct     = lazy(() => import('@/pages/staff/CreateActivity'))
 const AdminDash     = lazy(() => import('@/pages/admin/Dashboard'))
 const Unauthorized  = lazy(() => import('@/pages/misc/Unauthorized'))
@@ -108,7 +111,7 @@ const router = createBrowserRouter([
       { path: 'student/profile', element: <Profile /> },
 
       // --- Staff Mode pages ---
-      { path: 'admin', element: <StaffDashboard /> },
+      { path: 'staff', element: <StaffDashboard /> },
       { path: 'activities', element: <StaffActivityList /> },
       { path: 'activities/create', element: <CreateActivity /> },
       { path: 'activities/:id/edit', element: <EditActivity /> },
@@ -125,6 +128,15 @@ const router = createBrowserRouter([
   {
     path: '/admin',
    // element: <ProtectedRoute allow={['ADMIN']}><AdminDash /></ProtectedRoute>,
+    element: <AdminLayout/>,
+    children:[
+      { index: true, element: <AdminDash /> },
+      {path: 'activities', element:<AdminActivityDetail/>},
+      {path: 'approval', element:<ApprovalCenter/>},
+      {path: 'users', element:<UserManagement/>},
+
+    ]
+
   },
 
   // Misc
