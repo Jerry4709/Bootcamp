@@ -1,5 +1,5 @@
 export type ActivityType = 'VOLUNTEER' | 'WORK' | 'TRAINING';
-export type ActivityStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'CANCELLED';
+export type ActivityStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'CLOSED' | 'CANCELLED';
 
 export interface Activity {
   id: string;

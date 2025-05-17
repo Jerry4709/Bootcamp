@@ -1,5 +1,3 @@
-
-
 export type Role = 'STUDENT' | 'STAFF' | 'ADMIN';
 
 export interface User {
@@ -9,6 +7,7 @@ export interface User {
   lastname: string;
   email: string;
   role: Role;
+  isBanned: boolean;     // เพิ่ม field isBanned
   avatarUrl?: string;
   hours: number;         
   points: number;        
