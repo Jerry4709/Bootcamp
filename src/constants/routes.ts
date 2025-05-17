@@ -5,7 +5,7 @@ export const ROUTES = {
   UNAUTHORIZED: '/unauthorized',
   NOT_FOUND: '*',
 
-  STUDENT_DASHBOARD: '/',
+  STUDENT_DASHBOARD: '/student',
   STUDENT_ACTIVITIES: '/activities',
   STUDENT_ACTIVITY_DETAIL: (id: string) => `/activities/${id}`,
   STUDENT_MY_ACTIVITIES: '/my-activities',

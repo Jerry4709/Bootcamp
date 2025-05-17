@@ -1,5 +1,3 @@
-
-
 export type Role = 'STUDENT' | 'STAFF' | 'ADMIN';
 
 export interface User {
@@ -13,5 +11,6 @@ export interface User {
   hours: number;         
   points: number;        
   createdAt: string;     
-  updatedAt: string;     
+  updatedAt: string;    
+  isBanned: boolean; 
 }

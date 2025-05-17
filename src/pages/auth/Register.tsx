@@ -1,31 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
+import { facultyService } from '@/services/faculty.service';
+import type { Faculty, Major } from '@/services/faculty.service';
 
-// Type augmentation for Framer Motion
-
-
-interface Option {
-  label: string;
-  value: string;
-}
-
-const faculties: Option[] = [
-  { label: 'วิทยาศาสตร์', value: 'SCI' },
-  { label: 'วิศวกรรมศาสตร์', value: 'ENG' },
-  { label: 'บริหารธุรกิจ', value: 'BA' },
-];
-
-const fields: Option[] = [
-  { label: 'คอมพิวเตอร์', value: 'COM' },
-  { label: 'การเงิน', value: 'FIN' },
-  { label: 'วิศวกรรมซอฟต์แวร์', value: 'SE' },
-];
-
-const statuses: Option[] = [
+// ตัวเลือกสถานะผู้ใช้
+const statuses = [
   { label: 'นักศึกษา', value: 'STUDENT' },
   { label: 'อาจารย์', value: 'STAFF' },
   { label: 'บุคลากร', value: 'EMPLOYEE' },
@@ -33,7 +16,8 @@ const statuses: Option[] = [
 
 interface AuthContextValue {
   signUp: (data: {
-    name: string;
+    firstname: string;
+    lastname: string;
     studentId: string;
     faculty: string;
     field: string;
@@ -41,14 +25,15 @@ interface AuthContextValue {
     email: string;
     password: string;
   }) => Promise<void>;
-
 }
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUp } = useAuth() as AuthContextValue; // Cast เพื่อแก้ ts(2339) ชั่วคราว ควรแก้ที่ context จริง
+  const { signUp } = useAuth() as AuthContextValue;
 
-  const [name, setName] = useState('');
+  // ข้อมูลผู้ใช้
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [studentId, setStudentId] = useState('');
   const [faculty, setFaculty] = useState('');
   const [field, setField] = useState('');
@@ -56,19 +41,91 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
+  
+  // สถานะการทำงาน
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // ข้อมูลคณะและสาขา
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [allMajors, setAllMajors] = useState<Major[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [loadingFaculties, setLoadingFaculties] = useState(false);
+
+  // ดึงข้อมูลคณะและสาขาเมื่อโหลดหน้า
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoadingFaculties(true);
+      try {
+        // ดึงข้อมูลคณะทั้งหมด
+        const facultiesData = await facultyService.getAllFaculties();
+        setFaculties(facultiesData);
+        
+        // ดึงข้อมูลสาขาทั้งหมด
+        const majorsData = await facultyService.getAllMajors();
+        setAllMajors(majorsData);
+      } catch (err) {
+        console.error('Failed to fetch faculties or majors:', err);
+        setError('ไม่สามารถโหลดข้อมูลคณะและสาขาได้ กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        setLoadingFaculties(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  // กรองสาขาตามคณะที่เลือก
+  useEffect(() => {
+    if (faculty && allMajors.length > 0) {
+      const facultyId = parseInt(faculty);
+      const filteredMajors = allMajors.filter(m => m.faculty_id === facultyId);
+      setMajors(filteredMajors);
+      setField(''); // รีเซ็ตการเลือกสาขาเมื่อเปลี่ยนคณะ
+    } else {
+      setMajors([]);
+    }
+  }, [faculty, allMajors]);
+
+  // เมื่อเลือกคณะใหม่ ให้ดึงข้อมูลสาขาของคณะนั้น
+  const handleFacultyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const facultyId = e.target.value;
+    setFaculty(facultyId);
+    
+    if (!facultyId) return;
+    
+    try {
+      // ดึงข้อมูลสาขาตามคณะที่เลือก
+      const majorsData = await facultyService.getMajorsByFacultyId(parseInt(facultyId));
+      setMajors(majorsData);
+      setField(''); // รีเซ็ตการเลือกสาขาเมื่อเปลี่ยนคณะ
+    } catch (err) {
+      console.error('Failed to fetch majors for faculty:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signUp({
-      name,
-      studentId,
-      faculty,
-      field,
-      status,
-      email,
-      password,
-    });
-    navigate(ROUTES.STUDENT_DASHBOARD);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await signUp({
+        firstname,
+        lastname,
+        studentId,
+        faculty,
+        field,
+        status,
+        email,
+        password,
+      });
+      navigate(ROUTES.STUDENT_DASHBOARD);
+    } catch (err: any) {
+      setError(err.message || 'การลงทะเบียนไม่สำเร็จ โปรดลองอีกครั้ง');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Animation variants for staggered effect
@@ -122,7 +179,19 @@ export default function Register() {
           transition={{ duration: 0.5 }}
         >
           Create Your Account
-        </motion.h1> {/* เพิ่ม closing tag ที่ขาดหายไป */}
+        </motion.h1>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div 
+            className="bg-red-50 text-red-500 p-4 rounded-lg mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {error}
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
           {/* Left column */}
@@ -133,13 +202,13 @@ export default function Register() {
             animate="visible"
           >
             <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Full Name</label>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">ชื่อ</label>
               <motion.input
                 type="text"
                 className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="กรอกชื่อ"
+                value={firstname}
+                onChange={(e) => setFirstname(e.target.value)}
                 required
                 whileFocus={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
@@ -147,21 +216,36 @@ export default function Register() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Faculty</label>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">นามสกุล</label>
+              <motion.input
+                type="text"
+                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+                placeholder="กรอกนามสกุล"
+                value={lastname}
+                onChange={(e) => setLastname(e.target.value)}
+                required
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">คณะ</label>
               <motion.select
                 className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
                 value={faculty}
-                onChange={(e) => setFaculty(e.target.value)}
+                onChange={handleFacultyChange}
                 required
+                disabled={loadingFaculties}
                 whileFocus={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
                 <option value="" disabled>
-                  Select your faculty
+                  {loadingFaculties ? 'กำลังโหลด...' : 'เลือกคณะ'}
                 </option>
-                {faculties.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
+                {faculties.map((faculty) => (
+                  <option key={faculty.id} value={faculty.id.toString()}>
+                    {faculty.name}
                   </option>
                 ))}
               </motion.select>
@@ -180,14 +264,60 @@ export default function Register() {
                 transition={{ duration: 0.2 }}
               />
             </motion.div>
+          </motion.div>
+
+          {/* Right column */}
+          <motion.div
+            className="space-y-5"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div variants={itemVariants}>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">รหัสนักศึกษา</label>
+              <motion.input
+                type="text"
+                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+                placeholder="กรอกรหัสนักศึกษา"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                required
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Password</label>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">สาขา</label>
+              <motion.select
+                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+                value={field}
+                onChange={(e) => setField(e.target.value)}
+                required
+                disabled={!faculty || majors.length === 0}
+                whileFocus={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <option value="" disabled>
+                  {!faculty ? 'กรุณาเลือกคณะก่อน' : majors.length === 0 ? 'ไม่พบข้อมูลสาขา' : 'เลือกสาขา'}
+                </option>
+                {majors.map((major) => (
+                  <option key={major.id} value={major.id.toString()}>
+                    {major.name}
+                  </option>
+                ))}
+              </motion.select>
+            </motion.div>
+
+           
+
+            <motion.div variants={itemVariants}>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">รหัสผ่าน</label>
               <div className="relative mt-2">
                 <motion.input
                   type={showPwd ? 'text' : 'password'}
                   className="w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 pr-12"
-                  placeholder="Create a password"
+                  placeholder="สร้างรหัสผ่าน"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -230,70 +360,6 @@ export default function Register() {
             </motion.div>
           </motion.div>
 
-          {/* Right column */}
-          <motion.div
-            className="space-y-5"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Student/Staff ID</label>
-              <motion.input
-                type="text"
-                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                placeholder="Enter your ID"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                required
-                whileFocus={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              />
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Field of Study</label>
-              <motion.select
-                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                value={field}
-                onChange={(e) => setField(e.target.value)}
-                required
-                whileFocus={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <option value="" disabled>
-                  Select your field
-                </option>
-                {fields.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </motion.select>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Status</label>
-              <motion.select
-                className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                required
-                whileFocus={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <option value="" disabled>
-                  Select your status
-                </option>
-                {statuses.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </motion.select>
-            </motion.div>
-          </motion.div>
-
           {/* Submit button */}
           <motion.div
             className="md:col-span-2 flex justify-center pt-4"
@@ -301,11 +367,12 @@ export default function Register() {
           >
             <motion.button
               type="submit"
-              className="w-48 py-3 rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 hover:from-violet-700 hover:to-blue-600 text-white font-semibold tracking-wide shadow-lg transform transition-all duration-300"
-              whileHover={{ scale: 1.05, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)' }}
-              whileTap={{ scale: 0.95 }}
+              disabled={loading || loadingFaculties}
+              className={`w-48 py-3 rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 hover:from-violet-700 hover:to-blue-600 text-white font-semibold tracking-wide shadow-lg transform transition-all duration-300 ${(loading || loadingFaculties) ? 'opacity-70 cursor-not-allowed' : ''}`}
+              whileHover={{ scale: (loading || loadingFaculties) ? 1 : 1.05, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)' }}
+              whileTap={{ scale: (loading || loadingFaculties) ? 1 : 0.95 }}
             >
-              Sign Up
+              {loading ? 'กำลังลงทะเบียน...' : 'ลงทะเบียน'}
             </motion.button>
           </motion.div>
         </form>
@@ -314,12 +381,12 @@ export default function Register() {
           className="mt-8 text-center text-sm text-neutral-600 dark:text-neutral-400"
           variants={itemVariants}
         >
-          Already have an account?{' '}
+          มีบัญชีอยู่แล้ว?{' '}
           <Link
             to={ROUTES.LOGIN}
             className="text-violet-600 hover:text-violet-700 font-semibold transition-colors duration-200"
           >
-            Log in
+            เข้าสู่ระบบ
           </Link>
         </motion.p>
       </motion.div>

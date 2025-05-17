@@ -16,6 +16,10 @@ import CreateActivity from '@/pages/staff/CreateActivity'
 import EditActivity from './pages/staff/EditActivity'
 import ActivityDetailPage from '@/pages/student/Activities/ActivityDetail'
 import Applicants from './pages/staff/Applicants'
+import AdminActivityDetail from './pages/admin/Activities/ActivityDetail'
+import ApprovalCenter from './pages/admin/ApprovalCenter'
+import UserManagement from './pages/admin/UserManagement'
+import AdminLayout from './layouts/AdminLayout'
 
 // ─── Lazy-loaded Pages ───────────────────────────────
 const Login         = lazy(() => import('@/pages/auth/Login'))
@@ -52,8 +56,8 @@ const router = createBrowserRouter([
   // Protected - Student
   {
   path: '/student',
-  // element: <ProtectedRoute allow={['STUDENT']}><DashboardLayout /></ProtectedRoute>,
-  element: <DashboardLayout />, 
+  element: <ProtectedRoute allow={['STUDENT']}><DashboardLayout /></ProtectedRoute>,
+  //element: <DashboardLayout />, 
   errorElement: <ErrorFallback />,
   children: [
     {
@@ -125,6 +129,20 @@ const router = createBrowserRouter([
   {
     path: '/admin',
    // element: <ProtectedRoute allow={['ADMIN']}><AdminDash /></ProtectedRoute>,
+  element: <AdminLayout/>,
+    children:[
+      { index: true, element: <AdminDash /> },
+      { path: 'activities', element: <AdminActivityDetail/> },
+      { path: 'approval', element: <ApprovalCenter/> },
+      { path: 'users', element: <UserManagement/> },
+      
+      // เพิ่ม Staff functionality สำหรับ Admin
+      { path: 'staff-activities', element: <StaffActivityList /> },
+      { path: 'staff-activities/create', element: <CreateActivity /> },
+      { path: 'staff-activities/:id/edit', element: <EditActivity /> },
+      { path: 'staff-activities/:id', element: <ActivityDetailPage /> },
+      { path: 'staff-activities/:id/applicants', element: <Applicants /> },
+    ]
   },
 
   // Misc

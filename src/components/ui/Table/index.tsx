@@ -10,6 +10,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   onRowClick?: (row: T) => void;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -17,8 +18,25 @@ export function DataTable<T>({
   columns,
   data,
   onRowClick,
+  isLoading,
   className = '',
 }: DataTableProps<T>) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8 bg-white dark:bg-neutral-900 rounded-lg">
+        <div className="text-neutral-500 dark:text-neutral-400">กำลังโหลด...</div>
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="flex items-center justify-center p-8 bg-white dark:bg-neutral-900 rounded-lg">
+        <div className="text-neutral-500 dark:text-neutral-400">ไม่พบข้อมูล</div>
+      </div>
+    );
+  }
+
   return (
     <div className={`overflow-x-auto ${className}`}>
       <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">

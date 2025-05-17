@@ -8,19 +8,28 @@ import { ROUTES } from '@/constants/routes';
 // Type definition for AuthContextValue
 interface AuthContextValue {
   login: (token: string) => void; // ฟังก์ชันสำหรับบันทึก token
-  logout: () => void; // ฟังก์ชันสำหรับ logout (ถ้ามี)
+  loginAction: (email: string, password: string) => Promise<{accessToken: string, user: User}>; // ฟังก์ชันสำหรับ login
+  logout: () => void; // ฟังก์ชันสำหรับ logout
 }
 
-// Interface สำหรับ response จาก backend
-interface LoginResponse {
-  success: boolean;
-  token?: string;
-  message?: string;
+// Interface สำหรับข้อมูลผู้ใช้
+interface User {
+  id: string;
+  sid: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  role: 'STUDENT' | 'STAFF' | 'ADMIN';
+  avatarUrl?: string;
+  hours: number;
+  points: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginAction } = useAuth() as AuthContextValue;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,26 +43,28 @@ export default function Login() {
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data: LoginResponse = await response.json();
-
-      if (data.success && data.token) {
-        
-        login(data.token);
-        localStorage.setItem('authToken', data.token); // ตัวอย่างการบันทึก token
-        navigate(ROUTES.STUDENT_DASHBOARD);
-      } else {
-        setError(data.message || 'Login failed. Please try again.');
+      // ใช้ loginAction จาก AuthContext แทนการเรียก API โดยตรง
+      const { user } = await loginAction(email, password);
+      
+      // ตรวจสอบ role และนำทางไปยังหน้าที่เหมาะสม
+      switch (user.role) {
+        case 'STUDENT':
+          navigate(ROUTES.STUDENT_DASHBOARD);
+          break;
+        case 'STAFF':
+          navigate(ROUTES.STAFF_DASHBOARD);
+          break;
+        case 'ADMIN':
+          navigate(ROUTES.ADMIN_DASHBOARD);
+          break;
+        default:
+          // กรณีที่ไม่มี role ที่รองรับ
+          navigate(ROUTES.STUDENT_DASHBOARD); // default fallback
       }
-    } catch (err) {
-      setError('An error occurred. Please check your network or try again later.');
+    } catch (err: any) {
+      // จัดการข้อผิดพลาดที่เกิดขึ้น
+      setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -109,30 +120,30 @@ export default function Login() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Log In
+          เข้าสู่ระบบ
         </motion.h1>
 
         {/* Error Message */}
         {error && (
-          <motion.p
-            className="text-red-500 text-sm text-center mb-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <motion.div 
+            className="bg-red-50 text-red-500 p-4 rounded-lg mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
             {error}
-          </motion.p>
+          </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email */}
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Email</label>
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">อีเมล</label>
               <motion.input
                 type="email"
                 className="mt-2 w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
-                placeholder="Enter your email"
+                placeholder="กรอกอีเมลของคุณ"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -142,13 +153,13 @@ export default function Login() {
             </motion.div>
 
             {/* Password */}
-            <motion.div variants={itemVariants}>
-              <label className="font-semibold text-neutral-700 dark:text-neutral-200">Password</label>
+            <motion.div variants={itemVariants} className="mt-4">
+              <label className="font-semibold text-neutral-700 dark:text-neutral-200">รหัสผ่าน</label>
               <div className="relative mt-2">
                 <motion.input
                   type={showPwd ? 'text' : 'password'}
                   className="w-full rounded-lg bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 pr-12"
-                  placeholder="Enter your password"
+                  placeholder="กรอกรหัสผ่านของคุณ"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -197,10 +208,10 @@ export default function Login() {
               type="submit"
               disabled={loading}
               className={`w-full py-3 rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 hover:from-violet-700 hover:to-blue-600 text-white font-semibold tracking-wide shadow-lg transform transition-all duration-300 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              whileHover={{ scale: 1.05, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)' }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: loading ? 1 : 1.05, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)' }}
+              whileTap={{ scale: loading ? 1 : 0.95 }}
             >
-              {loading ? 'Logging In...' : 'Log In'}
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
             </motion.button>
           </motion.div>
         </form>
@@ -209,12 +220,12 @@ export default function Login() {
           className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400"
           variants={itemVariants}
         >
-          Don’t have an account?{' '}
+          ยังไม่มีบัญชี?{' '}
           <Link
             to={ROUTES.REGISTER}
             className="text-violet-600 hover:text-violet-700 font-semibold transition-colors duration-200"
           >
-            Sign up
+            ลงทะเบียน
           </Link>
         </motion.p>
       </motion.div>
