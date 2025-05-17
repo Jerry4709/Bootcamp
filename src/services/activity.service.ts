@@ -17,7 +17,7 @@ export const activityService = {
   async getApproved(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
     try {
       const { page = 1, limit = 10, type = '', search = '' } = params;
-      const url = '/api/activities/approved';
+      const url = '/activities/approved';
       
       // สร้าง query parameters
       const queryParams = new URLSearchParams();
@@ -55,7 +55,7 @@ export const activityService = {
    */
   async getById(id: string): Promise<ActivityDetail> {
     try {
-      const response = await axios.get(`/api/activities/${id}`);
+      const response = await axios.get(`/activities/${id}`);
       
       if (response.data && response.data.success) {
         return response.data.data;
@@ -74,7 +74,7 @@ export const activityService = {
    */
   async toggleRegistration(id: string): Promise<{ success: boolean }> {
     try {
-      const response = await axios.post(`/api/activities/${id}/toggle`);
+      const response = await axios.post(`/activities/${id}/toggle`);
       
       if (response.data && response.data.success) {
         return { success: true };
@@ -92,7 +92,7 @@ export const activityService = {
    */
   async getMyActivities(): Promise<Activity[]> {
     try {
-      const response = await axios.get('/api/activities/my');
+      const response = await axios.get('/activities/my');
       
       if (response.data && response.data.success) {
         return response.data.data || [];
@@ -112,7 +112,7 @@ export const activityService = {
   async getAll(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
     try {
       const { page = 1, limit = 10, type = '', status = '', search = '' } = params;
-      const url = '/api/activities';
+      const url = '/activities';
       
       // สร้าง query parameters
       const queryParams = new URLSearchParams();
@@ -152,7 +152,7 @@ export const activityService = {
    */
   async getMySummary(): Promise<ActivitySummary> {
     try {
-      const response = await axios.get('/api/activities/summary');
+      const response = await axios.get('/activities/summary');
       
       if (response.data && response.data.success) {
         return response.data.data || {
@@ -185,7 +185,7 @@ export const activityService = {
     upcomingActivities: number;
   }> {
     try {
-      const response = await axios.get('/api/activities/staff/summary');
+      const response = await axios.get('/activities/staff/summary');
       
       if (response.data && response.data.success) {
         return response.data.data || {
@@ -213,7 +213,7 @@ export const activityService = {
    */
   async create(data: ActivityPayload): Promise<ActivityDetail> {
     try {
-      const response = await axios.post('/api/activities', data);
+      const response = await axios.post('/activities', data);
       
       if (response.data && response.data.success) {
         return response.data.data;
@@ -233,7 +233,7 @@ export const activityService = {
    */
   async update(id: string, data: ActivityPayload): Promise<ActivityDetail> {
     try {
-      const response = await axios.put(`/api/activities/${id}`, data);
+      const response = await axios.put(`/activities/${id}`, data);
       
       if (response.data && response.data.success) {
         return response.data.data;
@@ -252,7 +252,7 @@ export const activityService = {
    */
   async getApplicants(activityId: string): Promise<Applicant[]> {
     try {
-      const response = await axios.get(`/api/activities/${activityId}/applicants`);
+      const response = await axios.get(`/activities/${activityId}/applicants`);
       
       if (response.data && response.data.success) {
         return response.data.data || [];
@@ -273,7 +273,7 @@ export const activityService = {
   async approveApplicant(activityId: string, applicantId: string): Promise<{ success: boolean }> {
     try {
       const response = await axios.post(
-        `/api/activities/${activityId}/applicants/${applicantId}/approve`
+        `/activities/${activityId}/applicants/${applicantId}/approve`
       );
       
       if (response.data && response.data.success) {
@@ -295,7 +295,7 @@ export const activityService = {
   async rejectApplicant(activityId: string, applicantId: string): Promise<{ success: boolean }> {
     try {
       const response = await axios.post(
-        `/api/activities/${activityId}/applicants/${applicantId}/reject`
+        `/activities/${activityId}/applicants/${applicantId}/reject`
       );
       
       if (response.data && response.data.success) {

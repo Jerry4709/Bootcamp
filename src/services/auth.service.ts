@@ -19,6 +19,7 @@ interface BackendLoginResponse {
       created_at: string;
       total_hours?: number;
       total_points?: number;
+      is_banned?: boolean; // Add this property to match backend response
     };
     token: string;
   }
@@ -60,6 +61,7 @@ export const register = async (data: RegisterPayload): Promise<LoginResponse> =>
     points: backendUser.total_points || 0,
     createdAt: backendUser.created_at,
     updatedAt: backendUser.created_at,
+    isBanned: backendUser.is_banned || false, // Map is_banned from backend to isBanned in User type
   };
 
   return {
@@ -99,6 +101,7 @@ export const login = async (
       points: backendUser.total_points || 0,
       createdAt: backendUser.created_at,
       updatedAt: backendUser.created_at,
+      isBanned: backendUser.is_banned || false, // Map is_banned from backend to isBanned in User type
     };
 
     console.log('Login successful, user role:', user.role);
@@ -134,6 +137,7 @@ export const me = async (): Promise<User> => {
     points: backendUser.total_points || 0,
     createdAt: backendUser.created_at,
     updatedAt: backendUser.created_at,
+    isBanned: backendUser.is_banned || false, // Map is_banned from backend to isBanned in User type
   };
 };
 
