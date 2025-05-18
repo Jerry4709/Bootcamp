@@ -100,7 +100,7 @@ export const activityService = {
   async getAllForAdmin(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
     try {
       console.log('Admin API Request params:', params) // Debug log
-      const res = await axios.get('/activities/admin/all', { params })
+      const res = await axios.get('/activities/admin', { params })
       console.log('Admin API Response:', res.data) // Debug log
       return getPaginatedResponseData(res)
     } catch (error) {

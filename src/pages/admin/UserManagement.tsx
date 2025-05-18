@@ -1,14 +1,30 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/ui/Table'
 import Button from '@/components/ui/Button'
-import { userService } from '@/services/user.service'
 import type { User } from '@/types/user'
+
+// เพิ่ม type สำหรับ confirmation modal
+interface ConfirmationModal {
+  isOpen: boolean
+  type: 'ban' | 'unban' | 'promote'
+  user: User | null
+  onConfirm: () => void
+  onCancel: () => void
+}
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [bannedUsers, setBannedUsers] = useState<Set<number>>(new Set())
+  const [confirmModal, setConfirmModal] = useState<ConfirmationModal>({
+    isOpen: false,
+    type: 'ban',
+    user: null,
+    onConfirm: () => {},
+    onCancel: () => {}
+  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,8 +32,8 @@ export default function UserManagement() {
         setIsLoading(true)
         setError(null)
         
-        // ใช้ axios โดยตรงเพื่อโหลดข้อมูลผู้ใช้ทั้งหมด
-        const response = await fetch('/api/users', {
+        // เรียก API ไปที่ backend server (port 3000)
+        const response = await fetch('http://localhost:3000/api/users', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
             'Content-Type': 'application/json',
@@ -66,12 +82,43 @@ export default function UserManagement() {
     fetchData()
   }, [])
 
+  const handleBanClick = (user: User, ban: boolean) => {
+    setConfirmModal({
+      isOpen: true,
+      type: ban ? 'ban' : 'unban',
+      user,
+      onConfirm: () => {
+        toggleBan(user.id, ban)
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+    })
+  }
+
+  const handlePromoteClick = (user: User) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'promote',
+      user,
+      onConfirm: () => {
+        promoteToStaff(user.id)
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+    })
+  }
+
   const toggleBan = async (id: number, ban: boolean) => {
     try {
       setIsLoading(true)
       
-      // Call ban API
-      const response = await fetch('/api/user-ban', {
+      const user = users.find(u => u.id === id)
+      if (!user) {
+        throw new Error('ไม่พบข้อมูลผู้ใช้')
+      }
+
+      // Call ban API using existing endpoints
+      const response = await fetch('http://localhost:3000/api/user-ban', {
         method: ban ? 'POST' : 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -84,13 +131,14 @@ export default function UserManagement() {
                 reason: 'แบนโดยผู้ดูแลระบบ' 
               }
             : { 
-                email: users.find(u => u.id === id)?.email 
+                email: user.email 
               }
         ),
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
       }
 
       // Update local state
@@ -109,9 +157,14 @@ export default function UserManagement() {
         return newSet
       })
 
+      // Show success message
+      const action = ban ? 'แบน' : 'ปลดแบน'
+      setSuccessMessage(`${action}ผู้ใช้ ${user.firstname} ${user.lastname} สำเร็จ`)
+      setTimeout(() => setSuccessMessage(null), 5000) // Clear after 5 seconds
+
     } catch (err) {
       console.error('Failed to update user ban status:', err)
-      setError(`ไม่สามารถ${ban ? 'แบน' : 'ปลดแบน'}ผู้ใช้ได้: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setError(`ไม่สามารถ${ban ? 'แบน' : 'ปลดแบน'}ผู้ใช้ได้: ${err instanceof Error ? err.message : 'ข้อผิดพลาดไม่ทราบสาเหตุ'}`)
     } finally {
       setIsLoading(false)
     }
@@ -121,17 +174,38 @@ export default function UserManagement() {
     try {
       setIsLoading(true)
       
-      // ใช้ userService แทน
-      await userService.changeUserRole(id, 'STAFF')
+      const user = users.find(u => u.id === id)
+      if (!user) {
+        throw new Error('ไม่พบข้อมูลผู้ใช้')
+      }
+
+      // Call role change API
+      const response = await fetch(`http://localhost:3000/api/users/${id}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: 'STAFF' }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
 
       // Update local state
       setUsers(prev =>
         prev.map(u => u.id === id ? { ...u, role: 'STAFF' } : u)
       )
 
+      // Show success message
+      setSuccessMessage(`เลื่อนสถานะ ${user.firstname} ${user.lastname} เป็น Staff สำเร็จ`)
+      setTimeout(() => setSuccessMessage(null), 5000) // Clear after 5 seconds
+
     } catch (err) {
       console.error('Failed to promote user:', err)
-      setError(`ไม่สามารถเลื่อนสถานะผู้ใช้ได้: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setError(`ไม่สามารถเลื่อนสถานะผู้ใช้ได้: ${err instanceof Error ? err.message : 'ข้อผิดพลาดไม่ทราบสาเหตุ'}`)
     } finally {
       setIsLoading(false)
     }
@@ -193,6 +267,39 @@ export default function UserManagement() {
           {users.length} ผู้ใช้ทั้งหมด ({bannedUsers.size} คนถูกแบน)
         </div>
       </div>
+
+      {/* Success Alert */}
+      {successMessage && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+                สำเร็จ
+              </h3>
+              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                <p>{successMessage}</p>
+              </div>
+            </div>
+            <div className="ml-auto pl-3">
+              <div className="-mx-1.5 -my-1.5">
+                <button
+                  onClick={() => setSuccessMessage(null)}
+                  className="inline-flex bg-green-50 dark:bg-green-900/20 rounded-md p-1.5 text-green-500 hover:bg-green-100 dark:hover:bg-green-900/40 focus:outline-none"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -307,7 +414,7 @@ export default function UserManagement() {
                 {/* Ban/Unban Button */}
                 <Button
                   size="sm"
-                  onClick={() => toggleBan(user.id, !user.is_banned)}
+                  onClick={() => handleBanClick(user, !user.is_banned)}
                   disabled={isLoading}
                   className={
                     user.is_banned 
@@ -323,7 +430,7 @@ export default function UserManagement() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => promoteToStaff(user.id)}
+                    onClick={() => handlePromoteClick(user)}
                     disabled={isLoading}
                   >
                     เลื่อนเป็น Staff
@@ -352,6 +459,65 @@ export default function UserManagement() {
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               <span>กำลังดำเนินการ...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && confirmModal.user && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {confirmModal.type === 'ban' && 'ยืนยันการแบนผู้ใช้'}
+              {confirmModal.type === 'unban' && 'ยืนยันการปลดแบนผู้ใช้'}
+              {confirmModal.type === 'promote' && 'ยืนยันการเลื่อนสถานะ'}
+            </h3>
+            
+            <div className="mb-6">
+              <p className="text-neutral-600 dark:text-neutral-300">
+                {confirmModal.type === 'ban' && 
+                  `คุณต้องการแบนผู้ใช้ "${confirmModal.user.firstname} ${confirmModal.user.lastname}" หรือไม่?`}
+                {confirmModal.type === 'unban' && 
+                  `คุณต้องการปลดแบนผู้ใช้ "${confirmModal.user.firstname} ${confirmModal.user.lastname}" หรือไม่?`}
+                {confirmModal.type === 'promote' && 
+                  `คุณต้องการเลื่อนสถานะ "${confirmModal.user.firstname} ${confirmModal.user.lastname}" เป็น Staff หรือไม่?`}
+              </p>
+              
+              <div className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-700 rounded">
+                <div className="text-sm">
+                  <strong>รหัสนิสิต:</strong> {confirmModal.user.student_id || '-'}
+                </div>
+                <div className="text-sm">
+                  <strong>อีเมล:</strong> {confirmModal.user.email}
+                </div>
+                <div className="text-sm">
+                  <strong>บทบาทปัจจุบัน:</strong> {confirmModal.user.role}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={confirmModal.onCancel}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                onClick={confirmModal.onConfirm}
+                className={
+                  confirmModal.type === 'ban' 
+                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                    : confirmModal.type === 'unban'
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }
+              >
+                {confirmModal.type === 'ban' && 'แบน'}
+                {confirmModal.type === 'unban' && 'ปลดแบน'}
+                {confirmModal.type === 'promote' && 'เลื่อนสถานะ'}
+              </Button>
             </div>
           </div>
         </div>

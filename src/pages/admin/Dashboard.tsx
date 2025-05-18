@@ -12,7 +12,7 @@ interface AdminSummary {
 // StatsCard Component
 interface StatsCardProps {
   title: string
-  value: string
+  value: number
   className?: string
 }
 
@@ -35,6 +35,8 @@ const StatsCard = ({ title, value, className = '' }: StatsCardProps) => (
 )
 
 export default function Dashboard() {
+  console.log('Dashboard component rendered') // ทดสอบว่าถูกเรียกไหม
+
   const [summary, setSummary] = useState<AdminSummary>({
     totalUsers: 0,
     totalActivities: 0,
@@ -42,19 +44,26 @@ export default function Dashboard() {
   })
 
   useEffect(() => {
+    console.log('Dashboard useEffect called') // ทดสอบว่า useEffect ทำงานไหม
     Promise.all([
       userService.getAll().then((u) => u.length),
       activityService.getAll({ page: 1, limit: 1 }).then((r) => r.total),
       activityService
-        .getAll({ page: 1, limit: 1, status: 'รออนุมัติ' }) // แก้ไขจาก 'PENDING' เป็น 'รออนุมัติ'
+        .getAll({ page: 1, limit: 1, status: 'รออนุมัติ' })
         .then((r) => r.total),
-    ]).then(([totalUsers, totalActivities, pendingActivities]) => {
-      setSummary({ totalUsers, totalActivities, pendingActivities })
-    })
+    ])
+      .then(([totalUsers, totalActivities, pendingActivities]) => {
+        setSummary({ totalUsers, totalActivities, pendingActivities })
+      })
+      .catch((err) => {
+        console.error('Dashboard load error:', err)
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err?.message)
+      })
   }, [])
 
   return (
     <main className="p-4 md:p-8 space-y-6">
+      <div>test</div>
       <motion.h1 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -63,11 +72,11 @@ export default function Dashboard() {
         แดชบอร์ดผู้ดูแลระบบ
       </motion.h1>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard title="ผู้ใช้ทั้งหมด" value={summary.totalUsers.toString()} />
-        <StatsCard title="กิจกรรมทั้งหมด" value={summary.totalActivities.toString()} />
+        <StatsCard title="ผู้ใช้ทั้งหมด" value={summary.totalUsers} />
+        <StatsCard title="กิจกรรมทั้งหมด" value={summary.totalActivities} />
         <StatsCard
           title="รออนุมัติกิจกรรม"
-          value={summary.pendingActivities.toString()}
+          value={summary.pendingActivities}
         />
       </div>
     </main>
