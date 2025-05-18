@@ -39,13 +39,13 @@ export default function AdminActivityList() {
   const [error, setError] = useState<string | null>(null)
 
   // Fetch activities - แสดงทุกกิจกรรมไม่กรองตาม role
-  useEffect(() => {
+    useEffect(() => {
     const fetchActivities = async () => {
       try {
         setLoading(true)
         setError(null)
         
-        console.log('Fetching all activities with params:', {
+        console.log('Fetching admin activities with params:', {
           page,
           limit,
           status: status || undefined,
@@ -53,8 +53,8 @@ export default function AdminActivityList() {
           search: searchQuery || undefined,
         })
         
-        // แก้ไข: ใช้ getAll แทน getApproved เพื่อให้ Admin เห็นทุกกิจกรรม
-        const result = await activityService.getAll({
+        // ใช้ getAllForAdmin สำหรับ Admin เพื่อให้เห็นทุกกิจกรรม
+        const result = await activityService.getAllForAdmin({
           page,
           limit,
           status: status || undefined,
@@ -62,10 +62,10 @@ export default function AdminActivityList() {
           search: searchQuery || undefined,
         })
         
-        console.log('API response:', result)
+        console.log('Admin API response:', result)
         setData(result)
       } catch (err) {
-        console.error('Error fetching activities:', err)
+        console.error('Error fetching admin activities:', err)
         setError('ไม่สามารถโหลดข้อมูลกิจกรรมได้: ' + (err instanceof Error ? err.message : 'Unknown error'))
       } finally {
         setLoading(false)
@@ -74,13 +74,13 @@ export default function AdminActivityList() {
 
     fetchActivities()
   }, [page, limit, status, category, searchQuery])
-
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
   }, [status, category, searchQuery, setPage])
 
   // Handle approval/rejection
+ // Handle approval/rejection
   const handleApproval = async (id: number, approve: boolean) => {
     try {
       if (approve) {
@@ -90,7 +90,7 @@ export default function AdminActivityList() {
       }
       
       // Refresh data after approval/rejection
-      const result = await activityService.getAll({
+      const result = await activityService.getAllForAdmin({
         page,
         limit,
         status: status || undefined,
@@ -369,7 +369,7 @@ export default function AdminActivityList() {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-8">
+     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-8">
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow">
           <div className="text-sm text-neutral-500 dark:text-neutral-400">ทั้งหมด</div>
           <div className="text-2xl font-bold text-neutral-900 dark:text-white">{data.total}</div>

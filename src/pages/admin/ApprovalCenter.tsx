@@ -17,11 +17,16 @@ export default function ApprovalCenter() {
       try {
         setLoading(true)
         setError(null)
+        console.log('Fetching pending activities...') // Debug log
         const activities = await activityService.getPendingActivities()
+        console.log('Received activities:', activities) // Debug log
         setPending(activities)
       } catch (err) {
         console.error('Error fetching pending activities:', err)
-        setError('ไม่สามารถโหลดข้อมูลกิจกรรมที่รออนุมัติได้')
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'ไม่สามารถโหลดข้อมูลกิจกรรมที่รออนุมัติได้'
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }

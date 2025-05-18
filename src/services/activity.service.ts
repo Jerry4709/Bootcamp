@@ -85,7 +85,7 @@ export const activityService = {
   },
 
   /** ดึงกิจกรรมทั้งหมด (พร้อม pagination) */
-  async getAll(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
+    async getAll(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
     try {
       console.log('API Request params:', params) // Debug log
       const res = await axios.get('/activities', { params })
@@ -96,6 +96,20 @@ export const activityService = {
       throw error
     }
   },
+  /** ดึงกิจกรรมทั้งหมดสำหรับ Admin (ไม่กรองสถานะ) */
+  async getAllForAdmin(params: ActivityFilterParams): Promise<PaginatedData<Activity>> {
+    try {
+      console.log('Admin API Request params:', params) // Debug log
+      const res = await axios.get('/activities/admin/all', { params })
+      console.log('Admin API Response:', res.data) // Debug log
+      return getPaginatedResponseData(res)
+    } catch (error) {
+      console.error('Error fetching all activities for admin:', error)
+      throw error
+    }
+  },
+
+
 
   /** ดึงรายละเอียดกิจกรรม */
   async getById(id: string): Promise<ActivityDetail> {
@@ -254,20 +268,16 @@ export const activityService = {
   },
 
   /** ดึงกิจกรรมที่รออนุมัติ (Admin) */
-  async getPendingActivities(): Promise<Activity[]> {
+   async getPendingActivities(): Promise<Activity[]> {
     try {
-      const pageAll = await this.getAll({ 
-        page: 1, 
-        limit: 9999, 
-        status: 'รออนุมัติ'
-      })
-      return pageAll.items
+      const res = await axios.get('/activities/pending')
+      const data = getResponseData(res)
+      return Array.isArray(data) ? data : []
     } catch (error) {
       console.error('Error fetching pending activities:', error)
       throw error
     }
   },
-
   /** อนุมัติกิจกรรม (Admin) */
   async approveActivity(id: number): Promise<void> {
     try {
