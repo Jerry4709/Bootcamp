@@ -35,49 +35,52 @@ export default function AdminActivityList() {
     items: [],
     total: 0,
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  const fetchActivities = async () => {
+    try {
+      console.log('Fetching activities...') // Debug log
+      setLoading(true)
+      setError(null)
+      
+      console.log('Fetching admin activities with params:', {
+        page,
+        limit,
+        status: status || undefined,
+        category: category || undefined,
+        search: searchQuery || undefined,
+      })
+      
+      // ใช้ getAllForAdmin สำหรับ Admin เพื่อให้เห็นทุกกิจกรรม
+      const result = await activityService.getAllForAdmin({
+        page,
+        limit,
+        status: status || undefined,
+        category: category || undefined,
+        search: searchQuery || undefined,
+      })
+      
+      console.log('Admin API response:', result)
+      setData(result)
+    } catch (err) {
+      console.error('Error fetching admin activities:', err)
+      setError('ไม่สามารถโหลดข้อมูลกิจกรรมได้: ' + (err instanceof Error ? err.message : 'Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }
+useEffect(() => {
+  console.log('AdminActivityList useEffect called') // Debug log
+    fetchActivities()
+  }, [])
   // Fetch activities - แสดงทุกกิจกรรมไม่กรองตาม role
     useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        console.log('Fetching admin activities with params:', {
-          page,
-          limit,
-          status: status || undefined,
-          category: category || undefined,
-          search: searchQuery || undefined,
-        })
-        
-        // ใช้ getAllForAdmin สำหรับ Admin เพื่อให้เห็นทุกกิจกรรม
-        const result = await activityService.getAllForAdmin({
-          page,
-          limit,
-          status: status || undefined,
-          category: category || undefined,
-          search: searchQuery || undefined,
-        })
-        
-        console.log('Admin API response:', result)
-        setData(result)
-      } catch (err) {
-        console.error('Error fetching admin activities:', err)
-        setError('ไม่สามารถโหลดข้อมูลกิจกรรมได้: ' + (err instanceof Error ? err.message : 'Unknown error'))
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchActivities()
+    // fetchActivities()
   }, [page, limit, status, category, searchQuery])
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [status, category, searchQuery, setPage])
+  }, [status, category, searchQuery])
 
   // Handle approval/rejection
  // Handle approval/rejection

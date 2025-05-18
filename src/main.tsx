@@ -20,6 +20,7 @@ import AdminLayout from './layouts/AdminLayout'
 import AdminActivityDetail from './pages/admin/Activities/ActivityDetail'
 import ApprovalCenter from './pages/admin/ApprovalCenter'
 import UserManagement from './pages/admin/UserManagement'
+import AdminActivityList from './pages/admin/Activities/ActivityList'
 
 // ─── Lazy-loaded Pages ───────────────────────────────
 const Login         = lazy(() => import('@/pages/auth/Login'))
@@ -109,7 +110,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <AdminDash /> },
-      { path: 'activities', element: <AdminActivityDetail /> },
+      { path: 'activities', element: <AdminActivityList /> },
       { path: 'approval', element: <ApprovalCenter /> },
       { path: 'users', element: <UserManagement /> },
       { path: 'staff-activities', element: <StaffActivityList /> },
