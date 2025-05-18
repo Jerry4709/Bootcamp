@@ -8,8 +8,7 @@ import { ROUTES } from '@/constants/routes';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { loginWithCredentials } = useAuth(); // ใช้ loginWithCredentials แทน
-  const {user, isAuthReady} = useAuth();
+  const { loginWithCredentials, user, isAuthReady } = useAuth();
   const location = useLocation();
 
   const [email, setEmail] = useState('');
@@ -18,55 +17,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // ใช้ loginWithCredentials จาก useAuth
-      const result = await loginWithCredentials(email, password);
-      
-      // Route ตาม role ของผู้ใช้
-      let redirectPath = '/student'; // default
-      
-      switch (result.user.role) {
-        case 'STUDENT':
-          redirectPath = '/student';
-          break;
-        case 'STAFF':
-          redirectPath = '/staff';
-          break;
-        case 'ADMIN':
-          redirectPath = '/admin';
-          break;
-        default:
-          redirectPath = '/unauthorized';
-      }
-      
-      navigate(redirectPath, { replace: true });
-      
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง');
-      } else {
-        setError('เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ตรวจสอบ user ที่มีอยู่แล้วเมื่อ component mount
+  // ตรวจสอบ user ที่มีอยู่แล้วเมื่อ component mount หรือ auth state เปลี่ยน
   useEffect(() => {
-    if (isAuthReady && user && (location.pathname === '/login' )) {
-      navigate(`/${user.role.toLowerCase()}`, { replace: true });
-    }
-  }, [user, isAuthReady, location.pathname, navigate]);
-
-  // เพิ่ม useEffect สำหรับ redirect ตาม role (สำรอง)
-  useEffect(() => {
-    if (isAuthReady && user) {
+    if (isAuthReady && user && location.pathname === '/login') {
       let redirectPath = '/unauthorized';
       
       switch (user.role) {
@@ -81,9 +34,60 @@ export default function Login() {
           break;
       }
       
+      // ใช้ replace: true เพื่อป้องกันการกลับมาที่หน้า login
       navigate(redirectPath, { replace: true });
     }
-  }, [user, isAuthReady, navigate]);
+  }, [user, isAuthReady, location.pathname, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // ใช้ loginWithCredentials จาก useAuth
+      const result = await loginWithCredentials(email, password);
+      
+      // Route ตาม role ของผู้ใช้
+      let redirectPath = '/unauthorized'; // default fallback
+      
+      switch (result.user.role) {
+        case 'STUDENT':
+          redirectPath = '/student';
+          break;
+        case 'STAFF':
+          redirectPath = '/staff';
+          break;
+        case 'ADMIN':
+          redirectPath = '/admin';
+          break;
+      }
+      
+      // ใช้ replace: true เพื่อป้องกันการกลับมาที่หน้า login
+      navigate(redirectPath, { replace: true });
+      
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง');
+      } else {
+        setError('เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // แสดง loading state ถ้า auth ยังไม่พร้อม
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 to-blue-100 dark:from-neutral-900 dark:to-neutral-800">
+        <div className="flex items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
+          <span className="text-neutral-600 dark:text-neutral-400">กำลังโหลด...</span>
+        </div>
+      </div>
+    );
+  }
 
   // Animation variants
   const containerVariants = {

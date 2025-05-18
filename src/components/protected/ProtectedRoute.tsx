@@ -10,15 +10,37 @@ export interface ProtectedRouteProps {
 const ProtectedRoute = ({ allow, children }: ProtectedRouteProps) => {
   const { user, isAuthReady } = useAuth();
   const location = useLocation();
-  const token = localStorage.getItem('volunteerhub_token');
+  const token = localStorage.getItem('accessToken');
 
-  if (!isAuthReady) return null;
+  // แสดง loading ถ้า auth ยังไม่พร้อม
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 to-blue-100 dark:from-neutral-900 dark:to-neutral-800">
+        <div className="flex items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
+          <span className="text-neutral-600 dark:text-neutral-400">กำลังโหลด...</span>
+        </div>
+      </div>
+    );
+  }
 
-  // ถ้ามี token และ user แล้วพยายามเข้าหน้า login
-  if (token && user && location.pathname === '/login') {
-    if (user.role === 'STUDENT') return <Navigate to="/student" replace />;
-    if (user.role === 'STAFF') return <Navigate to="/staff" replace />;
-    if (user.role === 'ADMIN') return <Navigate to="/admin" replace />;
+  // ถ้ามี user และเข้าหน้า login ให้ redirect ไปหน้าแรกของ role นั้น
+  if (user && token && location.pathname === '/login') {
+    let redirectPath = '/unauthorized';
+    
+    switch (user.role) {
+      case 'STUDENT':
+        redirectPath = '/student';
+        break;
+      case 'STAFF':
+        redirectPath = '/staff';
+        break;
+      case 'ADMIN':
+        redirectPath = '/admin';
+        break;
+    }
+    
+    return <Navigate to={redirectPath} replace />;
   }
 
   // ถ้าไม่มี user หรือ token
