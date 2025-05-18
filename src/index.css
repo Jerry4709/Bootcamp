@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@plugin "daisyui";
+
+:root {
+  --primary: 139, 92, 246;    /* violet-500 */
+  --secondary: 99, 102, 241;  /* indigo-500 */
+  --accent: 251, 191, 36;     /* amber-400 */
+  --neutral: 38, 38, 38;      /* neutral-800 */
+}
+[data-theme="light"] {
+  color-scheme: light;
+  
+  --p: var(--primary);
+  --s: var(--secondary);
+  --a: var(--accent);
+  --n: var(--neutral);
+  
+  --b1: 0 0% 100%;
+  --bc: 0 0% 9%;
+  
+  --in: 198 93% 60%;
+  --su: 158 64% 52%;
+  --wa: 43 96% 56%;
+  --er: 0 91% 71%;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  
+  --p: var(--primary);
+  --s: var(--secondary);
+  --a: var(--accent);
+  --n: var(--neutral);
+  
+  --b1: 0 0% 9%;
+  --bc: 0 0% 100%;
+  
+  --in: 198 93% 60%;
+  --su: 158 64% 52%;
+  --wa: 43 96% 56%;
+  --er: 0 91% 71%;
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .bg-gradient-primary {
+    background-image: linear-gradient(to right, #7c3aed, #4f46e5);
+  }
+  
+  .text-gradient-primary {
+    background-image: linear-gradient(to right, #7c3aed, #4f46e5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+/* Dark mode configuration */
+.dark {
+  --background: 23, 23, 23;
+  --foreground: 250, 250, 250;
+}
+
+/* Light mode configuration */
+:root {
+  --background: 255, 255, 255;
+  --foreground: 23, 23, 23;
+}
+
+
+.animate-text {
+  background-size: 200% auto;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+  100% { background-position: 0% center; }
+}
